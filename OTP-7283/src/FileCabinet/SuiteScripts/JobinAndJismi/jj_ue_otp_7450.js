@@ -63,13 +63,9 @@ define(['N/record'],
                     let newRecord = scriptContext.newRecord;
                     let oldRecord = scriptContext.oldRecord;
  
- 
                     if (addressChanged(newRecord, oldRecord)) {
                         newRecord.setValue({ fieldId: 'custentity_jj_address_changed', value: true });
                     } 
-                    else {
-                        newRecord.setValue({ fieldId: 'custentity_jj_address_changed', value: false });
-                    }
                 }
  
             } catch (e) {
