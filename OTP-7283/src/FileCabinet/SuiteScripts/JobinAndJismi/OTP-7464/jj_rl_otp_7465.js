@@ -41,7 +41,10 @@ define(['N/record', 'N/search'],
         const get = (requestParams) => {
 
             try {
+                // Retrieve the sales order ID from the request parameters
                 let salesOrderId = requestParams.id;
+                
+                // If no sales order ID is provided, perform a search to retrieve multiple sales orders with Open status
                 if (!salesOrderId) {
                     let salesOrders = [];
                     let salesOrderSearch = search.create({
@@ -53,6 +56,8 @@ define(['N/record', 'N/search'],
                         ],
                         columns: ['internalid', 'tranid', 'trandate', 'total']
                     });
+
+                    // Run the search and process each result
                     salesOrderSearch.run().each(function (result) {
                         salesOrders.push({
                             internalId: result.getValue({ name: 'internalid' }),
@@ -62,9 +67,12 @@ define(['N/record', 'N/search'],
                         });
                         return true;
                     });
+
+                    // Return the list of sales orders
                     return salesOrders;
                 }
                 else {
+                    // Load the specific sales order record if an ID is provided
                     let salesOrder = record.load({
                         type: record.Type.SALES_ORDER,
                         id: salesOrderId,
@@ -72,6 +80,7 @@ define(['N/record', 'N/search'],
                     });
                     let items = [];
                     let lineCount = salesOrder.getLineCount({ sublistId: 'item' });
+                    // Loop through each item line in the sales order
                     for (let i = 0; i < lineCount; i++) {
                         items.push({
                             itemName: salesOrder.getSublistText({ sublistId: 'item', fieldId: 'item', line: i }),
@@ -80,6 +89,7 @@ define(['N/record', 'N/search'],
                             grossAmount: salesOrder.getSublistValue({ sublistId: 'item', fieldId: 'amount', line: i })
                         });
                     }
+                    // Return the list of items in the sales order
                     return items;
                 }
             }
@@ -88,6 +98,7 @@ define(['N/record', 'N/search'],
                     title: 'Error retrieving sales order',
                     details: e
                 });
+                // Return a "Not Found" result
                 return "RESULT: NOT FOUND";
             }
 
