@@ -43,7 +43,7 @@ define(['N/record', 'N/search'],
             try {
                 // Retrieve the sales order ID from the request parameters
                 let salesOrderId = requestParams.id;
-                
+
                 // If no sales order ID is provided, perform a search to retrieve multiple sales orders with Open status
                 if (!salesOrderId) {
                     let salesOrders = [];
@@ -129,6 +129,68 @@ define(['N/record', 'N/search'],
          * @since 2015.2
          */
         const post = (requestBody) => {
+
+            try {
+                var salesOrderId = requestBody.salesOrderId;
+                var itemDetails = requestBody.itemDetails;
+    
+                if (!salesOrderId) {
+                    throw error.create({
+                        name: 'MISSING_REQUIRED_FIELDS',
+                        message: 'Sales Order ID is required',
+                        notifyOff: true
+                    });
+                }
+    
+                // Transform the sales order to item fulfillment
+                var itemFulfillment = record.transform({
+                    fromType: record.Type.SALES_ORDER,
+                    fromId: salesOrderId,
+                    toType: record.Type.ITEM_FULFILLMENT,
+                    isDynamic: true
+                });
+    
+                // Iterate over item details and set item fulfillment lines if provided
+                if (itemDetails) {
+                    itemDetails.forEach(function(item) {
+                        var lineNum = itemFulfillment.findSublistLineWithValue({
+                            sublistId: 'item',
+                            fieldId: 'item',
+                            value: item.itemId
+                        });
+    
+                        if (lineNum !== -1) {
+                            itemFulfillment.selectLine({
+                                sublistId: 'item',
+                                line: lineNum
+                            });
+    
+                            itemFulfillment.setCurrentSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'quantity',
+                                value: item.quantity
+                            });
+    
+                            itemFulfillment.commitLine({
+                                sublistId: 'item'
+                            });
+                        }
+                    });
+                }
+    
+                var itemFulfillmentId = itemFulfillment.save();
+    
+                return {
+                    success: true,
+                    itemFulfillmentId: itemFulfillmentId
+                };
+    
+            } catch (e) {
+                return {
+                    success: false,
+                    message: e.message
+                };
+            }
 
         }
 
