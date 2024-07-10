@@ -125,23 +125,23 @@ define(['N/record', 'N/search'],
                         message: 'Item Fulfillment ID is required.'
                     });
                 }
-        
+
                 // Load the item fulfillment record
                 let fulfillmentRecord = record.load({
                     type: record.Type.ITEM_FULFILLMENT,
                     id: requestBody.id
                 });
-        
+
                 // Update fields based on the JSON data received
                 for (let key in requestBody) {
-                    if (requestBody.hasOwnProperty(key) && key!== 'id') {
+                    if (requestBody.hasOwnProperty(key) && key !== 'id') {
                         fulfillmentRecord.setValue({
                             fieldId: key,
                             value: requestBody[key]
                         });
                     }
                 }
-        
+
                 // Save the updated record
                 let recordId = fulfillmentRecord.save();
                 return {
@@ -149,7 +149,7 @@ define(['N/record', 'N/search'],
                     id: recordId,
                     message: 'Item Fulfillment record updated successfully.'
                 };
-        
+
             } catch (e) {
                 log.error('Error updating Item Fulfillment record', e.message);
                 return {
@@ -174,7 +174,7 @@ define(['N/record', 'N/search'],
             try {
                 var salesOrderId = requestBody.salesOrderId;
                 var itemDetails = requestBody.itemDetails;
-    
+
                 if (!salesOrderId) {
                     throw error.create({
                         name: 'MISSING_REQUIRED_FIELDS',
@@ -182,7 +182,7 @@ define(['N/record', 'N/search'],
                         notifyOff: true
                     });
                 }
-    
+
                 // Transform the sales order to item fulfillment
                 var itemFulfillment = record.transform({
                     fromType: record.Type.SALES_ORDER,
@@ -190,42 +190,42 @@ define(['N/record', 'N/search'],
                     toType: record.Type.ITEM_FULFILLMENT,
                     isDynamic: true
                 });
-    
+
                 // Iterate over item details and set item fulfillment lines if provided
                 if (itemDetails) {
-                    itemDetails.forEach(function(item) {
+                    itemDetails.forEach(function (item) {
                         var lineNum = itemFulfillment.findSublistLineWithValue({
                             sublistId: 'item',
                             fieldId: 'item',
                             value: item.itemId
                         });
-    
+
                         if (lineNum !== -1) {
                             itemFulfillment.selectLine({
                                 sublistId: 'item',
                                 line: lineNum
                             });
-    
+
                             itemFulfillment.setCurrentSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'quantity',
                                 value: item.quantity
                             });
-    
+
                             itemFulfillment.commitLine({
                                 sublistId: 'item'
                             });
                         }
                     });
                 }
-    
+
                 var itemFulfillmentId = itemFulfillment.save();
-    
+
                 return {
                     success: true,
                     itemFulfillmentId: itemFulfillmentId
                 };
-    
+
             } catch (e) {
                 return {
                     success: false,
@@ -245,6 +245,33 @@ define(['N/record', 'N/search'],
          */
         const doDelete = (requestParams) => {
 
+            var itemFulfillmentId = requestParams.id;
+
+            if (!itemFulfillmentId) {
+                throw error.create({
+                    name: 'MISSING_ID',
+                    message: 'Missing ID parameter',
+                    notifyOff: true
+                });
+            }
+
+            try {
+                record.delete({
+                    type: record.Type.ITEM_FULFILLMENT,
+                    id: itemFulfillmentId
+                });
+                return {
+                    status: 'success',
+                    message: 'Item Fulfillment record deleted successfully',
+                    id: itemFulfillmentId
+                };
+            } catch (e) {
+                throw error.create({
+                    name: 'DELETE_FAILED',
+                    message: 'Failed to delete Item Fulfillment record: ' + e.message,
+                    notifyOff: true
+                });
+            }
         }
 
         return { get, put, post, delete: doDelete }
