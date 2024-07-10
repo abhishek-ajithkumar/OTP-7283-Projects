@@ -117,6 +117,47 @@ define(['N/record', 'N/search'],
          */
         const put = (requestBody) => {
 
+            try {
+                // Ensure item fulfillment id is provided in the request body
+                if (!requestBody.id) {
+                    throw error.create({
+                        name: 'MISSING_ID',
+                        message: 'Item Fulfillment ID is required.'
+                    });
+                }
+        
+                // Load the item fulfillment record
+                let fulfillmentRecord = record.load({
+                    type: record.Type.ITEM_FULFILLMENT,
+                    id: requestBody.id
+                });
+        
+                // Update fields based on the JSON data received
+                for (let key in requestBody) {
+                    if (requestBody.hasOwnProperty(key) && key!== 'id') {
+                        fulfillmentRecord.setValue({
+                            fieldId: key,
+                            value: requestBody[key]
+                        });
+                    }
+                }
+        
+                // Save the updated record
+                let recordId = fulfillmentRecord.save();
+                return {
+                    success: true,
+                    id: recordId,
+                    message: 'Item Fulfillment record updated successfully.'
+                };
+        
+            } catch (e) {
+                log.error('Error updating Item Fulfillment record', e.message);
+                return {
+                    success: false,
+                    message: e.message
+                };
+            }
+
         }
 
         /**
